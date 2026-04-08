@@ -165,39 +165,69 @@ const MonacoEditor = () => {
     const uriParts = selectedNode.id.split("#");
     const fragment = uriParts.length > 1 ? uriParts[1] : "";
 
-    const path = fragment
+    const decodePointerSegment = (segment: string) =>
+      decodeURIComponent(segment).replace(/~1/g, "/").replace(/~0/g, "~");
+
+    const rawPath = fragment
       .split("/")
       .filter((segment: string) => segment !== "")
-      .map((segment: string) => {
-        const decoded = decodeURIComponent(segment);
-        return /^\d+$/.test(decoded) ? parseInt(decoded, 10) : decoded;
-      });
+      .map((segment: string) => decodePointerSegment(segment));
+
+    const buildPathCandidates = (segments: string[]) => {
+      return segments.reduce<Array<Array<string | number>>>(
+        (candidates, segment) => {
+          if (!/^\d+$/.test(segment)) {
+            return candidates.map((candidate) => [...candidate, segment]);
+          }
+
+          const numericSegment = parseInt(segment, 10);
+          return candidates.flatMap((candidate) => [
+            [...candidate, segment],
+            [...candidate, numericSegment],
+          ]);
+        },
+        [[]]
+      );
+    };
 
     let startPos, endPos;
 
-    if (schemaFormat === "yaml") {
-      try {
+    try {
+      const pathCandidates = buildPathCandidates(rawPath);
+
+      if (schemaFormat === "yaml") {
         const doc = parseDocument(text);
         // If path is empty, we are at root, otherwise fetch the node.
-        const node = (path.length === 0 ? doc.contents : doc.getIn(path, true)) as any;
-        
+        const node = (rawPath.length === 0
+          ? doc.contents
+          : pathCandidates
+              .map((candidatePath) => doc.getIn(candidatePath, true))
+              .find(
+                (candidateNode) =>
+                  !!candidateNode &&
+                  typeof candidateNode === "object" &&
+                  "range" in candidateNode
+              )) as any;
+
         if (!node || !node.range) return;
-        
+
         const [start, valueEnd, nodeEnd] = node.range;
         startPos = model.getPositionAt(start);
         endPos = model.getPositionAt(nodeEnd ?? valueEnd);
-      } catch (err) {
-        return;
+      } else {
+        const tree = parseTree(text);
+        if (!tree) return;
+
+        const node = pathCandidates
+          .map((candidatePath) => findNodeAtLocation(tree, candidatePath))
+          .find((candidateNode) => !!candidateNode);
+        if (!node) return;
+
+        startPos = model.getPositionAt(node.offset);
+        endPos = model.getPositionAt(node.offset + node.length);
       }
-    } else {
-      const tree = parseTree(text);
-      if (!tree) return;
-
-      const node = findNodeAtLocation(tree, path);
-      if (!node) return;
-
-      startPos = model.getPositionAt(node.offset);
-      endPos = model.getPositionAt(node.offset + node.length);
+    } catch {
+      return;
     }
 
     if (startPos && endPos) {
@@ -205,12 +235,17 @@ const MonacoEditor = () => {
       editorRef.current.revealPositionInCenter(startPos);
       editorRef.current.setPosition(startPos);
 
+      const endLineNumber =
+        endPos.column === 1 && endPos.lineNumber > startPos.lineNumber
+          ? endPos.lineNumber - 1
+          : endPos.lineNumber;
+
       const decoration = {
         range: new (window as any).monaco.Range(
           startPos.lineNumber,
           1,
-          endPos.lineNumber,
-          1
+          endLineNumber,
+          model.getLineMaxColumn(endLineNumber)
         ),
         options: {
           isWholeLine: true,
@@ -225,7 +260,7 @@ const MonacoEditor = () => {
 
       model.deltaDecorations(oldDecorations, [decoration]);
     }
-  }, [selectedNode?.id]);
+  }, [selectedNode?.id, schemaFormat, schemaText]);
 
   useEffect(() => {
     saveFormat(SESSION_FORMAT_KEY, schemaFormat);
