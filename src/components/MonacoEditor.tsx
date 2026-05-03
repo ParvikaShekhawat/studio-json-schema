@@ -1,6 +1,5 @@
 import { useContext, useState, useEffect, useRef } from "react";
 
-import { parseTree, findNodeAtLocation } from "jsonc-parser";
 import {
   Panel,
   PanelGroup,
@@ -24,9 +23,11 @@ import { AppContext, type SchemaFormat } from "../contexts/AppContext";
 import SchemaVisualization from "./SchemaVisualization";
 import NavigationBar from "./NavigationBar";
 import EditorToggleButton from "./EditorToggleButton";
-import { parseSchema } from "../utils/parseSchema";
+import {
+  parseSchema,
+  getHighlightedNodeRangeFromPath,
+} from "../utils/parseSchema";
 import YAML from "js-yaml";
-import { parseDocument } from "yaml";
 import type { JSONSchema } from "@apidevtools/json-schema-ref-parser";
 
 type ValidationStatus = {
@@ -226,79 +227,24 @@ const MonacoEditor = () => {
         return /^\d+$/.test(decoded) ? parseInt(decoded, 10) : decoded;
       });
 
-    const buildPathCandidates = (segments: (string | number)[]) =>
-      segments.reduce<Array<Array<string | number>>>(
-        (candidates, segment) => {
-          const segmentStr = String(segment);
-          if (!/^\d+$/.test(segmentStr)) {
-            return candidates.map((candidate) => [...candidate, segment]);
-          }
+    const highlightedNodeRange = getHighlightedNodeRangeFromPath(
+      text,
+      path,
+      schemaFormat
+    );
 
-          const numericSegment = parseInt(segmentStr, 10);
-          return candidates.flatMap((candidate) => [
-            [...candidate, segmentStr],
-            [...candidate, numericSegment],
-          ]);
-        },
-        [[]]
-      );
-
-    let startPos, endPos;
-
-    try {
-      const pathCandidates = buildPathCandidates(path);
-
-      if (schemaFormat === "yaml") {
-        const doc = parseDocument(text);
-        const node = (path.length === 0
-          ? doc.contents
-          : pathCandidates
-              .map((candidatePath) => doc.getIn(candidatePath, true))
-              .find(
-                (candidateNode) =>
-                  !!candidateNode &&
-                  typeof candidateNode === "object" &&
-                  "range" in candidateNode
-              )) as any;
-
-        if (!node || !node.range) return;
-
-        const [start, valueEnd, nodeEnd] = node.range;
-        startPos = model.getPositionAt(start);
-        endPos = model.getPositionAt(nodeEnd ?? valueEnd);
-      } else {
-        const tree = parseTree(text);
-        if (!tree) return;
-
-        const node = pathCandidates
-          .map((candidatePath) => findNodeAtLocation(tree, candidatePath))
-          .find((candidateNode) => !!candidateNode);
-        if (!node) return;
-
-        startPos = model.getPositionAt(node.offset);
-        endPos = model.getPositionAt(node.offset + node.length);
-      }
-    } catch {
-      return;
-    }
-
-    if (startPos && endPos) {
+    if (highlightedNodeRange) {
+      const startPos = model.getPositionAt(highlightedNodeRange.start);
+      const endPos = model.getPositionAt(highlightedNodeRange.end);
 
       editorRef.current.revealPositionInCenter(startPos);
       editorRef.current.setPosition(startPos);
 
-      let highlightEndLine = endPos.lineNumber;
-      if (endPos.column === 1 && endPos.lineNumber > startPos.lineNumber) {
-        highlightEndLine = endPos.lineNumber - 1;
-      }
-
-      let highlightStartLine = Math.max(1, startPos.lineNumber - 1);
-
       const decoration = {
         range: new (window as any).monaco.Range(
-          highlightStartLine,
+          startPos.lineNumber,
           1,
-          highlightEndLine,
+          endPos.lineNumber,
           1
         ),
         options: {
@@ -363,10 +309,10 @@ const MonacoEditor = () => {
         };
 
         const browser = createBrowser(schemaId, schemaDocument);
-      // The Hyperjump `getSchema` expects a full browser instance, but we only need the _cache
-      // property for local-only resolution. This cast is safe because our usage only triggers cache lookup.
-      // @ts-expect-error
-      const schema = await getSchema(schemaDocument.baseUri, browser);
+        // The Hyperjump `getSchema` expects a full browser instance, but we only need the _cache
+        // property for local-only resolution. This cast is safe because our usage only triggers cache lookup.
+        // @ts-expect-error
+        const schema = await getSchema(schemaDocument.baseUri, browser);
 
         setCompiledSchema(await compile(schema));
         setSchemaValidation(

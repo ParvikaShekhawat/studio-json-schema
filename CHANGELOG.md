@@ -12,19 +12,6 @@
 ### Patch Changes
 
 - 9d80d54: chore: add static configuration for CodeRabbit AI
-
-## 0.8.1
-
-### Patch Changes
-
-- 76a9c05: Fixed the yaml node higlighter in the monaco editor
-- 612a7e0: Fix the yaml selected node higlighter in the monaco editor
-
-## 0.8.0
-
-### Minor Changes
-
-- a173afb: Add unified search bar that highlights matching graph nodes and corresponding editor code
 - 05ca649: feat: group minor and patch Dependabot updates to reduce PR noise
 
 ## 0.7.0
