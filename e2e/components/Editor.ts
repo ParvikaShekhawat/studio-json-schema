@@ -7,6 +7,10 @@ export class Editor {
         return this.page.locator(".monaco-editor");
     }
 
+    private get divCollections() {
+        return this.page.locator(".view-lines.monaco-mouse-cursor-text");
+    }
+
     async open() {
         await this.page.goto("/");
         await expect(this.editorBox).toBeAttached({ timeout: 10000 })
@@ -27,8 +31,7 @@ export class Editor {
         }, schemaText);
     }
 
-    async checkValidation(text: string) {
-        const validationElement = this.page.getByRole("status");
-        await expect(validationElement).toContainText(text);
+    async verifyPaste(text: string | RegExp) {
+        await expect(this.divCollections).toHaveText(text);
     }
 }

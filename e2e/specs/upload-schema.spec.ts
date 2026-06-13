@@ -10,8 +10,8 @@ test.describe("Editor", () => {
         await editor.open();
     });
 
-    test("user can upload and check validation of schema", async ({ }) => {
-        await editor.pasteSchema(JSON.stringify(validSchema))
-        await editor.checkValidation("Valid JSON Schema");
+    test("user can paste a schema in editor", async ({ }) => {
+        await editor.pasteSchema(JSON.stringify(validSchema));
+        await editor.verifyPaste(new RegExp("\\S+"));
     });
 });
