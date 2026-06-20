@@ -298,9 +298,14 @@ const MonacoEditor = () => {
 
     const timeout = setTimeout(async () => {
       try {
-        // INFO: parsedSchema is mutated by buildSchemaDocument function
+        // Parse the schema into a new object
         const parsedSchema = parseSchema(schemaText, schemaFormat);
-        const copy = structuredClone(parsedSchema);
+
+        // Save the pristine original before any mutations occur
+        saveSchemaJSON(SESSION_SCHEMA_KEY, parsedSchema);
+        
+        // Create a disposable clone for the mutation-heavy builder
+        const schemaForBuild = structuredClone(parsedSchema);
 
         const dialect = parsedSchema.$schema;
         const dialectVersion = dialect ?? DEFAULT_SCHEMA_DIALECT;
@@ -314,7 +319,7 @@ const MonacoEditor = () => {
         }
 
         const schemaDocument = buildSchemaDocument(
-          parsedSchema as SchemaObject,
+          schemaForBuild as SchemaObject,
           schemaId,
           dialectVersion
         );
@@ -346,7 +351,6 @@ const MonacoEditor = () => {
               }
         );
 
-        saveSchemaJSON(SESSION_SCHEMA_KEY, copy);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
 
