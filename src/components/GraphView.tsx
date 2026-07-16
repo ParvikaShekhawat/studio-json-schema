@@ -58,6 +58,7 @@ const GraphView = ({
   const [nodes, setNodes, onNodeChange] = useNodesState<GraphNode>([]);
   const [edges, setEdges, onEdgeChange] = useEdgesState<GraphEdge>([]);
   const [collisionResolved, setCollisionResolved] = useState(false);
+  const [isGraphReady, setIsGraphReady] = useState(false);
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
   const [matchedNodes, setMatchedNodes] = useState<GraphNode[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
@@ -266,7 +267,8 @@ const GraphView = ({
     setCollisionResolved(true);
 
     setTimeout(() => {
-      fitView({ duration: 800, padding: 0.05 });
+      fitView({ duration: isGraphReady ? 800 : 0, padding: 0.05 });
+      setIsGraphReady(true);
     }, 300);
   }, [nodes, collisionResolved, allNodesMeasured, setNodes, fitView]);
 
@@ -286,8 +288,13 @@ const GraphView = ({
     if (!containerRef.current) return;
 
     let timeoutId: ReturnType<typeof setTimeout>;
+    let initialized = false;
 
     const observer = new ResizeObserver(() => {
+      if (!initialized) {
+        initialized = true;
+        return;
+      }
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         const currentZoom = getZoom();
@@ -410,8 +417,11 @@ const GraphView = ({
     <div
       ref={containerRef}
       tabIndex={0}
-      // onKeyDown={handleKeyDown}
       className="relative w-full h-full"
+      style={{
+        opacity: isGraphReady ? 1 : 0,
+        transition: isGraphReady ? "opacity 0.4s ease-in" : "none",
+      }}
     >
       <ReactFlow
         nodes={nodes}
