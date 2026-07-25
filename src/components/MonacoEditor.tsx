@@ -273,33 +273,45 @@ const MonacoEditor = () => {
     }, 300);
   };
 
-  const toggleDiffMode = () => {
-    setIsDiffMode((prev) => {
-      const next = !prev;
-      if (next) {
-        setCompareSchemaText(schemaText);
-        if (editorVisible && !isMobile) {
-          setDiffEditorReady(false);
-          editorPanelRef.current?.resize(DIFF_EDITOR_PANEL_WIDTH);
-          window.setTimeout(() => {
-            setDiffEditorReady(true);
-          }, 320);
-        } else {
-          setDiffEditorReady(true);
-        }
-      } else {
-        setDiffEditorReady(false);
-        setDiffCompiledSchema(null);
-        diffEditorRef.current = null;
-        diffResizeObserverRef.current?.disconnect();
-        diffResizeObserverRef.current = null;
-        if (editorVisible && !isMobile) {
-          editorPanelRef.current?.resize(DEFAULT_EDITOR_PANEL_WIDTH);
-        }
-      }
-      return next;
-    });
-  };
+const toggleDiffMode = () => {
+  if (isDiffMode) {
+    // Turning Diff mode OFF.
+    // Dispose Monaco's diff editor + its models BEFORE React unmounts
+    // the <DiffEditor> component — this is the actual race condition fix.
+    const diffEditor = diffEditorRef.current;
+    if (diffEditor) {
+      const model = diffEditor.getModel(); // { original, modified }
+      diffEditor.setModel(null);           // detach models first
+      model?.original?.dispose();
+      model?.modified?.dispose();
+      diffEditor.dispose();                // now dispose the widget itself
+    }
+    diffEditorRef.current = null;
+
+    diffResizeObserverRef.current?.disconnect();
+    diffResizeObserverRef.current = null;
+
+    setDiffEditorReady(false);
+    setDiffCompiledSchema(null);
+    if (editorVisible && !isMobile) {
+      editorPanelRef.current?.resize(DEFAULT_EDITOR_PANEL_WIDTH);
+    }
+    setIsDiffMode(false);
+  } else {
+    // Turning Diff mode ON.
+    setCompareSchemaText(schemaText);
+    if (editorVisible && !isMobile) {
+      setDiffEditorReady(false);
+      editorPanelRef.current?.resize(DIFF_EDITOR_PANEL_WIDTH);
+      window.setTimeout(() => {
+        setDiffEditorReady(true);
+      }, 320);
+    } else {
+      setDiffEditorReady(true);
+    }
+    setIsDiffMode(true);
+  }
+};
 
   const highlightInStandaloneEditor = (
     target: editor.IStandaloneCodeEditor,
