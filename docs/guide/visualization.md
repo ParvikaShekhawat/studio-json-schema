@@ -44,11 +44,7 @@ Boolean schemas are visually distinct:
 Unlike object schema nodes, boolean schema colors are applied to the entire node, not just the title. Boolean nodes also have more rounded borders to differentiate them clearly.
 
 ## How It Works
-
-1. The input JSON Schema is parsed into an AST using [Hyperjump JSON Schema](https://github.com/hyperjump-io/json-schema).
-2. All `$ref` references — local and external — are automatically resolved by Hyperjump, so the AST includes fully expanded schemas.
-3. The resolved AST is transformed into graph nodes and edges, where each node represents a schema/subschema and edges represent parent-child relationships.
-4. Nodes and edges are rendered as an interactive graph using React Flow.
+See [How It Works](/guide/how-it-works) for details on how schemas are parsed and rendered.
 
 ## Known Issues
 

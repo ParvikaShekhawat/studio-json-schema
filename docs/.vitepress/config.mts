@@ -17,34 +17,11 @@ export default defineConfig({
     siteTitle: 'JSON Schema Studio',
 
     nav: [
-      { text: 'Home', link: '/' },
-      {
-        text: 'Guide',
-        items: [
-          { text: 'What is JSON Schema Studio?', link: '/guide/what-is-json-schema-studio' },
-          { text: 'Why JSON Schema Studio?', link: '/guide/why-json-schema-studio' },
-          { text: 'Quick Start', link: '/guide/quick-start' },
-          { text: 'Installation', link: '/guide/installation' }
-        ]
-      },
-      {
-        text: 'Reference',
-        items: [
-          { text: 'Understanding the Visualization', link: '/guide/visualization' },
-          { text: 'How It Works', link: '/guide/how-it-works' },
-          { text: 'FAQ & Known Issues', link: '/guide/faq' },
-          { text: 'Roadmap', link: '/guide/roadmap' }
-        ]
-      },
-      {
-        text: 'Contributing',
-        items: [
-          { text: 'Contributing Guide', link: '/contributing/guide' },
-          { text: 'Versioning & Changesets', link: '/contributing/versioning' }
-        ]
-      },
-      { text: 'Launch App', link: 'https://studio.ioflux.org' }
-    ],
+          { text: 'Home', link: '/' },
+          { text: 'Guide', link: '/guide/what-is-json-schema-studio' },
+          { text: 'Contributing', link: '/contributing/guide' },
+          { text: 'Launch App', link: 'https://studio.ioflux.org' }
+        ],
 
     sidebar: [
       {
