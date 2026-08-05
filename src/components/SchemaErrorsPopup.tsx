@@ -1,6 +1,7 @@
 import { BsBoxArrowUpRight } from "react-icons/bs";
 import { RiCloseLine } from "react-icons/ri";
 import type { ValidationStatus } from "./MonacoEditor";
+import { useEffect } from "react";
 
 type SchemaErrorsPopupProps = {
   schemaValidation: ValidationStatus;
@@ -26,10 +27,19 @@ const SchemaErrorsPopup = ({
 
   const isWarningPopup = schemaValidation.status === "warning" && warningPopupOpen;
 
+  useEffect(() => {
+  if (!isWarningPopup) return;
+  const handleEscape = (e: KeyboardEvent) => {
+    if (e.key === "Escape") onCloseWarningPopup();
+  };
+  window.addEventListener("keydown", handleEscape);
+  return () => window.removeEventListener("keydown", handleEscape);
+}, [isWarningPopup, onCloseWarningPopup]);
+
   if (!isErrorPopup && !isWarningPopup) {
     return null;
   }
-
+  
   const closable = isWarningPopup;
 
   return (
@@ -41,7 +51,7 @@ const SchemaErrorsPopup = ({
       />
       {/* Error card */}
       <div
-        className="relative z-50 w-[90%] sm:w-[60%] min-w-[280px] max-h-[80%] p-4 rounded-lg shadow-xl bg-[var(--popup-bg-color)] overflow-hidden flex flex-col gap-2 transition-all duration-200 ease-out scale-100 opacity-100"
+        className="relative z-50 w-[90%] sm:w-[60%] min-w-[280px] max-h-[80%] p-4 rounded-lg shadow-xl bg-[var(--popup-bg-color)] overflow-hidden flex flex-col gap-2"
         role="status"
         aria-live="polite"
         aria-label={isWarningPopup ? "Schema validation warning" : "Schema validation errors"}
