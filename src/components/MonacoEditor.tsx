@@ -204,15 +204,6 @@ const MonacoEditor = () => {
   }, [schemaValidation.status]);
 
   useEffect(() => {
-    if (!warningPopupOpen) return;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setWarningPopupOpen(false);
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [warningPopupOpen]);
-
-  useEffect(() => {
     editorPanelRef.current?.resize(isMobile ? 40 : DEFAULT_EDITOR_PANEL_WIDTH);
     setEditorVisible(true);
   }, [isMobile]);
