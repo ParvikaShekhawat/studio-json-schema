@@ -520,7 +520,17 @@ const MonacoEditor = () => {
               id="schema-format-select"
               value={schemaFormat}
               onChange={(e) => changeSchemaFormat(e.target.value as SchemaFormat)}
-              className="h-[26px] min-w-[60px] px-1 flex-shrink-0 bg-[var(--bg-color)] text-[var(--text-color)] text-sm outline-none cursor-pointer border border-[var(--popup-border-color)] rounded-sm"
+              disabled={schemaValidation.status === "error"}
+              title={
+                schemaValidation.status === "error"
+                  ? "Fix the schema error before switching format"
+                  : "Schema format"
+              }
+              className={`h-[26px] min-w-[60px] px-1 flex-shrink-0 text-sm outline-none border border-[var(--popup-border-color)] rounded-sm ${
+                schemaValidation.status === "error"
+                  ? "bg-[var(--bg-color)] text-[var(--text-color)] opacity-40 cursor-not-allowed"
+                  : "bg-[var(--bg-color)] text-[var(--text-color)] cursor-pointer"
+              }`}
             >
               <option value="json">JSON</option>
               <option value="yaml">YAML</option>
