@@ -532,7 +532,7 @@ const MonacoEditor = () => {
               type="button"
               aria-label={`${schemaValidation.message} (click for details)`}
               title={schemaValidation.message}
-              onClick={() => setWarningPopupOpen(true)}
+              onClick={() => setWarningPopupOpen(state => !state)}
               className={`text-base leading-none cursor-pointer hover:opacity-75 transition-opacity ${VALIDATION_UI[schemaValidation.status].className.replace("break-words", "")}`}
             >
               ⚠
